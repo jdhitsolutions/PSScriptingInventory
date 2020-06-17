@@ -67,7 +67,7 @@ Function Get-ASTToken {
         $cPath = Convert-Path $Path
         Write-Verbose "[PROCESS] Getting AST Tokens from $cpath"
         $AST = [System.Management.Automation.Language.Parser]::ParseFile($cPath, [ref]$astTokens, [ref]$astErr)
-        [void]$AST.FindAll( {$args[0] -is [System.Management.Automation.Language.CommandAst]}, $true)
+        [void]$AST.FindAll({$args[0] -is [System.Management.Automation.Language.CommandAst]}, $true)
         $astTokens
     } #process
 
@@ -92,7 +92,7 @@ Function Measure-ScriptFile {
     Begin {
         Write-Verbose "[BEGIN  ] Starting: $($MyInvocation.Mycommand)"
         $start = Get-Date
-        Write-Information "Start time $start" -Tags meta
+        Write-Information "Starting $($myinvocation.mycommand)" -Tags meta
         $filecounter = 0
         $all = @()
         if ($ResolveCommands) {
@@ -101,6 +101,8 @@ Function Measure-ScriptFile {
             $cmds = (Get-Command -commandtype Filter, Function, Cmdlet).Name
             Write-Verbose "[BEGIN  ] Using $($cmds.count) command names"
         }
+        #get TextInfo object to be used later for formatting commands to title case
+        $TextInfo = (Get-Culture).TextInfo
     } #begin
 
     Process {
@@ -148,7 +150,7 @@ Function Measure-ScriptFile {
                 }
                 else {
                     #create a new result
-                    $item = [PSInventory]::new($Value)
+                    $item = [PSInventory]::new($TextInfo.ToTitleCase($Value.tolower()))
                     $all += $item
                 }
                 Write-Information "[PROCESS] Updating $($item.name) inventory object" -Tags process
@@ -190,15 +192,17 @@ Function Get-PSScriptInventory {
         Write-Verbose "[BEGIN  ] Starting $($myinvocation.mycommand)"
         $starttime = Get-Date
         Write-Verbose "[BEGIN  ] $Starttime"
+        Write-Information "Starting $($myinvocation.mycommand)" -tags meta
     } #begin
     Process {
         Write-Verbose "[PROCESS] Processing $Path"
         if ($BatchSize -eq 0) {
-            Get-PSFile -Path $Path -Recurse:$Recurse -OutVariable f| Measure-ScriptFile
+            Get-PSFile -Path $Path -Recurse:$Recurse -OutVariable f | Measure-ScriptFile
             $totalfilecount = $f.count
         }
         else {
             Write-Verbose "[PROCESS] Processing batch size $BatchSize"
+            Write-Information "Using batch processing size $BatchSize" -Tags meta
             #use Foreach-Parallel if PowerShell 7
             if ($IsCoreCLR) {
                 Write-Verbose "[PROCESS] Processing in parallel"
@@ -214,6 +218,7 @@ Function Get-PSScriptInventory {
                 }
                 $results = $sets.GetEnumerator() | ForEach-Object -Parallel {
                     Write-Host "[$(Get-Date -format 'hh:mm:ss.ffff')] Processing $($_.name) in parallel" -ForegroundColor cyan
+                    Write-Information "Processing $($_.name)" -tags meta
                     $_.value | Measure-ScriptFile
                 }
             } #coreCLR
@@ -233,6 +238,7 @@ Function Get-PSScriptInventory {
                 } -process {
                     if ($tmp.Count -ge $batchsize) {
                         Write-Host "[$(Get-Date -format 'hh:mm:ss.ffff')] Processing set of $($tmp.count) files" -ForegroundColor cyan
+                        Write-Information "Starting threadjob" -Tags meta
                         $jobs += Start-ThreadJob -ScriptBlock $sb -ArgumentList @(, $tmp.ToArray()) -Name tmpJob
                         $tmp.Clear()
                     }
@@ -250,10 +256,11 @@ Function Get-PSScriptInventory {
             } #Windows PowerShell
 
             Write-Verbose "[PROCESS] Merging $($results.count) results"
+            Write-Information "Merging $($results.count) results" -tags meta
             $output = $results | Group-Object -Property Name | Foreach-Object {
                 #create a new PSInventory object from the merged results
                 $r = [PSInventory]::New($_.Name)
-                $r.Total = $_.Count
+                $r.Total = ($_.group | Measure-Object -Property Total -sum).sum
                 $r.files = $_.group.files
                 $r
             }
@@ -264,7 +271,10 @@ Function Get-PSScriptInventory {
         $endtime = Get-Date
         Write-Verbose "[END    ] $endtime"
         $runtime = New-TimeSpan -Start $starttime -End $endtime
+
         Write-Verbose "[END    ] Processed $totalfilecount files in $runtime"
         Write-Verbose "[END    ] Ending $($myinvocation.mycommand)"
+        Write-Information "PSScriptInventory processed $totalfilecount files in $runtime" -tags meta
+        Write-Information "Ending $($myinvocation.mycommand)" -tags meta
     } #end
 }

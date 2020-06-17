@@ -1,5 +1,11 @@
 # ChangeLog for PSScriptingInventory
 
+## 0.4.0
+
++ Fixed bug in `Get-PSScriptInventory` that was reporting the wrong number of total uses.
++ Added code to format all command names to title case.
++ Added `Write-Information` statements to `Get-PSScriptInventory`.
+
 ## 0.3.0
 
 + Added help documents

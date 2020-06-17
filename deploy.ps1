@@ -8,14 +8,14 @@ if (Test-Path $_) {
 else {
    Throw "Cannot validate path $_"
 }
-})]     
+})]
 [string]$Path = "C:\Program Files\WindowsPowerShell\Modules"
 )
 Begin {
-    Write-Verbose "[BEGIN  ] Starting: $($MyInvocation.Mycommand)"  
+    Write-Verbose "[BEGIN  ] Starting: $($MyInvocation.Mycommand)"
 } #begin
 Process {
-    Write-Verbose "[PROCESS] Copying $PSScriptRoot to $Path" 
+    Write-Verbose "[PROCESS] Copying $PSScriptRoot to $Path"
     Copy-Item -Path $PSScriptRoot -Destination $Path -Container -Recurse -Force
 } #process
 End {
