@@ -1,6 +1,8 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <!--
 format type data generated 06/16/2020 17:36:13 by BOVINE320\Jeff
+This file was created using New-PSFormatXML from the PSScriptTools modules
+https://github.com/jdhitsolutions/PSScriptTools
 -->
 <Configuration>
   <ViewDefinitions>
@@ -33,10 +35,6 @@ format type data generated 06/16/2020 17:36:13 by BOVINE320\Jeff
         <TableRowEntries>
           <TableRowEntry>
             <TableColumnItems>
-              <!--
-            By default the entries use property names, but you can replace them with scriptblocks.
-            <ScriptBlock>$_.foo /1mb -as [int]</ScriptBlock>
--->
               <TableColumnItem>
                 <PropertyName>Name</PropertyName>
               </TableColumnItem>

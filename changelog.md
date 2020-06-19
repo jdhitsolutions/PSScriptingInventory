@@ -1,5 +1,10 @@
 # ChangeLog for PSScriptingInventory
 
+## 0.5.0
+
++ Added a `Date` hidden property to the `PSInventory` class.
++ Updated `README.md`
+
 ## 0.4.0
 
 + Fixed bug in `Get-PSScriptInventory` that was reporting the wrong number of total uses.

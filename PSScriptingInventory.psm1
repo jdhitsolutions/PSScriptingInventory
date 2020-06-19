@@ -4,6 +4,7 @@ class PSInventory {
     [string]$Name
     [int32]$Total
     [string[]]$Files
+    hidden [datetime]$Date = (Get-Date)
     hidden [string]$Computername = [System.Environment]::MachineName
 
     PSInventory([string]$Name) {
@@ -41,7 +42,7 @@ Function Get-PSFile {
         Write-Verbose "[PROCESS] Getting all PowerShell related files under $(Convert-Path $Path)"
         #$psboundparameters | out-string | write-verbose
         #this should get .ps1, .psm1, .psd1 files
-        (Get-ChildItem @PSBoundparameters).Where( {$_.Extension -match "\.ps(m|d)?1$"})
+        (Get-ChildItem @PSBoundparameters).Where({$_.Extension -match "\.ps(m|d)?1$"})
 
     } #process
     End {
@@ -271,7 +272,6 @@ Function Get-PSScriptInventory {
         $endtime = Get-Date
         Write-Verbose "[END    ] $endtime"
         $runtime = New-TimeSpan -Start $starttime -End $endtime
-
         Write-Verbose "[END    ] Processed $totalfilecount files in $runtime"
         Write-Verbose "[END    ] Ending $($myinvocation.mycommand)"
         Write-Information "PSScriptInventory processed $totalfilecount files in $runtime" -tags meta
