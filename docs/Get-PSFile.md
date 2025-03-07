@@ -49,7 +49,7 @@ Accept wildcard characters: False
 
 ### -Recurse
 
-Search subfolders for PowerShell files.
+Search sub-folders for PowerShell files.
 
 ```yaml
 Type: SwitchParameter

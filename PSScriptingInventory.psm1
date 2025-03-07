@@ -30,23 +30,23 @@ Function Get-PSFile {
         [switch]$Recurse
     )
     Begin {
-        Write-Verbose "[BEGIN  ] Starting: $($MyInvocation.Mycommand)"
-        $PSBoundParameters.Add("File", $True)
-        $PSBoundParameters.Add("Filter", "*.ps*")
-        if (-Not $PSBoundParameters.ContainsKey("Path")) {
-            #add the default to PSBoundParameters
-            $PSBoundParameters.Add("Path", $Path)
+        Write-Verbose "[BEGIN  ] Starting: $($MyInvocation.MyCommand)"
+        $PSBound@PSBoundParameters.Add("File", $True)
+        $PSBound@PSBoundParameters.Add("Filter", "*.ps*")
+        if (-Not $PSBound@PSBoundParameters.ContainsKey("Path")) {
+            #add the default to PSBound@PSBoundParameters
+            $PSBound@PSBoundParameters.Add("Path", $Path)
         }
     } #begin
     Process {
         Write-Verbose "[PROCESS] Getting all PowerShell related files under $(Convert-Path $Path)"
-        #$psboundparameters | out-string | write-verbose
+        #$PSBound@PSBoundParameters | out-string | write-verbose
         #this should get .ps1, .psm1, .psd1 files
-        (Get-ChildItem @PSBoundparameters).Where({$_.Extension -match "\.ps(m|d)?1$"})
+        (Get-ChildItem @PSBoundParameters).Where({$_.Extension -match "\.ps(m|d)?1$"})
 
     } #process
     End {
-        Write-Verbose "[END    ] Ending: $($MyInvocation.Mycommand)"
+        Write-Verbose "[END    ] Ending: $($MyInvocation.MyCommand)"
     } #end
 }
 
@@ -59,21 +59,21 @@ Function Get-ASTToken {
     )
 
     Begin {
-        Write-Verbose "[BEGIN  ] Starting: $($MyInvocation.Mycommand)"
+        Write-Verbose "[BEGIN  ] Starting: $($MyInvocation.MyCommand)"
         New-Variable astTokens -force
         New-Variable astErr -force
     } #begin
 
     Process {
         $cPath = Convert-Path $Path
-        Write-Verbose "[PROCESS] Getting AST Tokens from $cpath"
+        Write-Verbose "[PROCESS] Getting AST Tokens from $cPath"
         $AST = [System.Management.Automation.Language.Parser]::ParseFile($cPath, [ref]$astTokens, [ref]$astErr)
         [void]$AST.FindAll({$args[0] -is [System.Management.Automation.Language.CommandAst]}, $true)
         $astTokens
     } #process
 
     End {
-        Write-Verbose "[END    ] Ending: $($MyInvocation.Mycommand)"
+        Write-Verbose "[END    ] Ending: $($MyInvocation.MyCommand)"
     } #end
 }
 
@@ -91,15 +91,15 @@ Function Measure-ScriptFile {
     )
 
     Begin {
-        Write-Verbose "[BEGIN  ] Starting: $($MyInvocation.Mycommand)"
+        Write-Verbose "[BEGIN  ] Starting: $($MyInvocation.MyCommand)"
         $start = Get-Date
-        Write-Information "Starting $($myinvocation.mycommand)" -Tags meta
-        $filecounter = 0
+        Write-Information "Starting $($MyInvocation.MyCommand)" -Tags meta
+        $fileCounter = 0
         $all = @()
         if ($ResolveCommands) {
             #get all commands
             Write-Verbose "[BEGIN  ] Building command inventory"
-            $cmds = (Get-Command -commandtype Filter, Function, Cmdlet).Name
+            $cmds = (Get-Command -CommandType Filter, Function, Cmdlet).Name
             Write-Verbose "[BEGIN  ] Using $($cmds.count) command names"
         }
         #get TextInfo object to be used later for formatting commands to title case
@@ -108,9 +108,9 @@ Function Measure-ScriptFile {
 
     Process {
         Write-Information "Processing $(Convert-Path $Path)" -Tags process
-        $filecounter++
+        $fileCounter++
         $AST = Get-ASTToken -path $Path
-        $ASTTokens = ($AST).where( {$_.tokenFlags -eq "commandname" -AND (-Not $_.nestedtokens)})
+        $ASTTokens = ($AST).where( {$_.tokenFlags -eq "CommandName" -AND (-Not $_.NestedTokens)})
         Write-Verbose "[PROCESS] Processing $($ASTTokens.count) tokens"
 
         foreach ($Token in $ASTTokens) {
@@ -151,7 +151,7 @@ Function Measure-ScriptFile {
                 }
                 else {
                     #create a new result
-                    $item = [PSInventory]::new($TextInfo.ToTitleCase($Value.tolower()))
+                    $item = [PSInventory]::new($TextInfo.ToTitleCase($Value.ToLower()))
                     $all += $item
                 }
                 Write-Information "[PROCESS] Updating $($item.name) inventory object" -Tags process
@@ -169,9 +169,9 @@ Function Measure-ScriptFile {
         $end = Get-Date
         Write-Information "End time $end" -Tags meta
         $run = New-TimeSpan -Start $start -End $end
-        Write-Verbose "[END    ] Processed $filecounter files in $run"
-        Write-Information "Processed $filecounter files in $run" -Tags meta
-        Write-Verbose "[END    ] Ending: $($MyInvocation.Mycommand)"
+        Write-Verbose "[END    ] Processed $fileCounter files in $run"
+        Write-Information "Processed $fileCounter files in $run" -Tags meta
+        Write-Verbose "[END    ] Ending: $($MyInvocation.MyCommand)"
     } #end
 }
 
@@ -187,34 +187,35 @@ Function Get-PSScriptInventory {
         [switch]$Recurse,
         [Parameter(HelpMessage = "Specify the number of files to batch process. A value of 0 means do not run in batches or parallel.")]
         [ValidateSet(0,50,100,250,500)]
-        [int]$BatchSize = 0
+        [int]$batchSize = 0
     )
     Begin {
-        Write-Verbose "[BEGIN  ] Starting $($myinvocation.mycommand)"
+        Write-Verbose "[BEGIN  ] Starting $($MyInvocation.MyCommand)"
         $starttime = Get-Date
         Write-Verbose "[BEGIN  ] $Starttime"
-        Write-Information "Starting $($myinvocation.mycommand)" -tags meta
+        Write-Information "Starting $($MyInvocation.MyCommand)" -tags meta
     } #begin
     Process {
         Write-Verbose "[PROCESS] Processing $Path"
-        if ($BatchSize -eq 0) {
-            Get-PSFile -Path $Path -Recurse:$Recurse -OutVariable f | Measure-ScriptFile
-            $totalfilecount = $f.count
+        if ($batchSize -eq 0) {
+            Get-PSFile -Path $Path -Recurse:$Recurse -OutVariable f |
+            Measure-ScriptFile
+            $totalFileCount = $f.count
         }
         else {
-            Write-Verbose "[PROCESS] Processing batch size $BatchSize"
-            Write-Information "Using batch processing size $BatchSize" -Tags meta
+            Write-Verbose "[PROCESS] Processing batch size $batchSize"
+            Write-Information "Using batch processing size $batchSize" -Tags meta
             #use Foreach-Parallel if PowerShell 7
             if ($IsCoreCLR) {
                 Write-Verbose "[PROCESS] Processing in parallel"
                 $files = Get-PSFile -Path $Path -Recurse:$Recurse
-                $totalfilecount = $files.count
+                $totalFileCount = $files.count
                 $sets = @{}
                 $c = 0
-                for ($i = 0 ; $i -lt $files.count; $i += $batchsize) {
+                for ($i = 0 ; $i -lt $files.count; $i += $batchSize) {
                     $c++
                     $start = $i
-                    $end = $i + ($BatchSize-1)
+                    $end = $i + ($batchSize-1)
                     $sets.Add("Set$C", @($files[$start..$end]))
                 }
                 $results = $sets.GetEnumerator() | ForEach-Object -Parallel {
@@ -227,7 +228,7 @@ Function Get-PSScriptInventory {
                 Write-Verbose "[PROCESS] Processing with thread jobs"
                 Get-PSFile -Path $Path -Recurse:$Recurse |
                 ForEach-Object -begin {
-                    $totalfilecount = 0
+                    $totalFileCount = 0
                     $tmp = [System.Collections.Generic.List[object]]::new()
                     $jobs = @()
 
@@ -237,13 +238,13 @@ Function Get-PSScriptInventory {
                         $files | Measure-ScriptFile
                     }
                 } -process {
-                    if ($tmp.Count -ge $batchsize) {
+                    if ($tmp.Count -ge $batchSize) {
                         Write-Host "[$(Get-Date -format 'hh:mm:ss.ffff')] Processing set of $($tmp.count) files" -ForegroundColor cyan
-                        Write-Information "Starting threadjob" -Tags meta
+                        Write-Information "Starting thread job" -Tags meta
                         $jobs += Start-ThreadJob -ScriptBlock $sb -ArgumentList @(, $tmp.ToArray()) -Name tmpJob
                         $tmp.Clear()
                     }
-                    $totalfilecount++
+                    $totalFileCount++
                     $tmp.Add($_)
                 } -end {
                     #use the remaining objects
@@ -272,9 +273,9 @@ Function Get-PSScriptInventory {
         $endtime = Get-Date
         Write-Verbose "[END    ] $endtime"
         $runtime = New-TimeSpan -Start $starttime -End $endtime
-        Write-Verbose "[END    ] Processed $totalfilecount files in $runtime"
-        Write-Verbose "[END    ] Ending $($myinvocation.mycommand)"
-        Write-Information "PSScriptInventory processed $totalfilecount files in $runtime" -tags meta
-        Write-Information "Ending $($myinvocation.mycommand)" -tags meta
+        Write-Verbose "[END    ] Processed $totalFileCount files in $runtime"
+        Write-Verbose "[END    ] Ending $($MyInvocation.MyCommand)"
+        Write-Information "PSScriptInventory processed $totalFileCount files in $runtime" -tags meta
+        Write-Information "Ending $($MyInvocation.MyCommand)" -tags meta
     } #end
 }
